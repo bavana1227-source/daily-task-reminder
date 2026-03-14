@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Daily Task Reminder</title>
+
+<style>
+body{
+font-family:Arial;
+text-align:center;
+background:#eef2f7;
+}
+
+input{
+padding:10px;
+width:220px;
+}
+
+button{
+padding:10px;
+margin:5px;
+}
+
+li{
+list-style:none;
+margin:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>Daily Task Reminder</h1>
+
+<input id="taskInput" placeholder="Enter a task">
+<button onclick="addTask()">Add Task</button>
+
+<ul id="taskList"></ul>
+
+<script>
+
+if (Notification.permission !== "granted") {
+Notification.requestPermission();
+}
+
+let tasks=[]
+
+function addTask(){
+
+let input=document.getElementById("taskInput")
+
+let task=input.value
+
+if(task==="") return
+
+tasks.push(task)
+
+render()
+
+input.value=""
+}
+
+function render(){
+
+let list=document.getElementById("taskList")
+
+list.innerHTML=""
+
+tasks.forEach(task=>{
+
+let li=document.createElement("li")
+
+li.innerText=task
+
+list.appendChild(li)
+
+})
+
+}
+
+function sendReminder(){
+
+tasks.forEach(task=>{
+
+new Notification("Reminder: "+task)
+
+})
+
+}
+
+setInterval(sendReminder,86400000)
+
+</script>
+
+</body>
+</html>
