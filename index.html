@@ -11,10 +11,12 @@ body {
     font-family: 'Arial', sans-serif;
     background: #f0f4f8;
     display: flex;
-    justify-content: center;
-    padding-top: 50px;
+    justify-content: flex-start;
+    padding: 50px;
+    gap: 40px;
 }
 
+/* Main task container */
 .container {
     background: #ffffff;
     padding: 30px;
@@ -25,8 +27,8 @@ body {
 }
 
 h1 { margin-bottom: 20px; color: #333; }
-h2 { margin-top: 30px; color: #555; }
 
+/* Inputs and buttons */
 input, input[type="time"] {
     padding: 12px;
     width: 50%;
@@ -54,6 +56,7 @@ ul {
     margin-top: 15px;
 }
 
+/* Task items */
 li {
     background: #f9fafb;
     margin-bottom: 10px;
@@ -68,8 +71,15 @@ li {
 li.done { text-decoration: line-through; color: gray; }
 
 li.upcoming {
-    background: #fef3c7; /* light yellow for next task */
+    background: #fef3c7;
     border: 1px solid #f59e0b;
+    transition: box-shadow 0.5s, transform 0.5s;
+}
+
+/* Glow/pulse animation */
+li.upcoming.glow {
+    box-shadow: 0 0 20px 5px #f59e0b;
+    transform: scale(1.02);
 }
 
 .delete-btn {
@@ -83,39 +93,51 @@ li.upcoming {
 
 .delete-btn:hover { background: #b91c1c; }
 
-.all-tasks-box {
-    background: #ede9fe; /* light purple */
-    padding: 15px;
-    border-radius: 12px;
-    margin-top: 20px;
-    margin-left: -30px; /* shift slightly left */
-    max-height: 220px;
-    overflow-y: auto;
-    text-align: left;
-}
-
 .countdown {
     font-weight: bold;
     color: #4f46e5;
     margin-left: 10px;
 }
+
+/* All Tasks So Far box - fully separate */
+.all-tasks-container {
+    width: 300px;
+    background: #ede9fe;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: left;
+    height: fit-content;
+}
+
+.all-tasks-container h2 {
+    margin-top: 0;
+    color: #555;
+}
+
+.all-tasks-container ul {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-left: 15px;
+}
 </style>
 </head>
 
 <body>
+
+<!-- Main Task Box -->
 <div class="container">
     <h1>Daily Task Reminder</h1>
-
     <input id="taskInput" placeholder="Enter a task">
     <input type="time" id="timeInput" value="09:00">
     <button onclick="addTask()">Add</button>
 
     <ul id="taskList"></ul>
+</div>
 
+<!-- All Tasks So Far Box -->
+<div class="all-tasks-container">
     <h2>All Tasks So Far</h2>
-    <div class="all-tasks-box">
-        <ul id="allTasksList"></ul>
-    </div>
+    <ul id="allTasksList"></ul>
 </div>
 
 <script>
@@ -166,8 +188,18 @@ function render() {
     tasks.forEach((task,index) => {
         let li = document.createElement("li");
         li.innerHTML = `<span>${task.name} (${task.time})</span><span class="countdown"></span>`;
+        li.classList.remove("upcoming", "glow");
 
-        if(index === nextIndex) li.classList.add("upcoming");
+        if(index === nextIndex) {
+            li.classList.add("upcoming");
+            // Add glow if <10 minutes remaining
+            let [taskH, taskM] = task.time.split(":").map(Number);
+            let nowMinutes = now.getHours()*60 + now.getMinutes();
+            let taskMinutes = taskH*60 + taskM;
+            let diffMinutes = taskMinutes - nowMinutes;
+            if(diffMinutes < 0) diffMinutes += 24*60;
+            if(diffMinutes <= 10) li.classList.add("glow");
+        }
 
         let del = document.createElement("button");
         del.innerText = "🗑";
@@ -221,10 +253,13 @@ function updateCountdowns() {
             new Notification("Reminder: " + task.name);
         }
     });
+
+    render(); // Update glow on upcoming task
 }
 
 // Update countdown every second
 setInterval(updateCountdowns, 1000);
 </script>
+
 </body>
 </html>
