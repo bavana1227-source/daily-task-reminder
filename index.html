@@ -2,108 +2,156 @@
 <html>
 <head>
 <title>Daily Task Reminder</title>
-
 <style>
-body{
-font-family:Arial;
-text-align:center;
-background:#eef2f7;
+body {
+    font-family: 'comic sans ms', sans-serif;
+    background: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 50px;
+    min-height: 100vh;
 }
 
-input{
-padding:10px;
-width:220px;
+.container {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    width: 320px;
+    text-align: center;
 }
 
-button{
-padding:10px;
-margin:5px;
+h1 {
+    margin-bottom: 20px;
+    color: #333;
 }
 
-li{
-list-style:none;
-margin:10px;
+input {
+    padding: 12px;
+    width: 70%;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-right: 5px;
+    font-size: 14px;
+}
+
+button {
+    padding: 12px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #4338ca;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+li {
+    background: #f9fafb;
+    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+li.done {
+    text-decoration: line-through;
+    color: gray;
+}
+
+.delete-btn {
+    background: #ef4444;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background: #b91c1c;
 }
 </style>
-
 </head>
 
 <body>
 
+<div class="container">
 <h1>Daily Task Reminder</h1>
-
 <input id="taskInput" placeholder="Enter a task">
-<button onclick="addTask()">Add Task</button>
+<button onclick="addTask()">Add</button>
 
 <ul id="taskList"></ul>
+</div>
 
 <script>
-
 if (Notification.permission !== "granted") {
-Notification.requestPermission();
+    Notification.requestPermission();
 }
 
-let tasks = JSON.parse(localStorage.getItem("tasks")) || []
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-render()
+render();
 
 function addTask(){
-
-let input=document.getElementById("taskInput")
-let task=input.value
-
-if(task==="") return
-
-tasks.push(task)
-
-saveTasks()
-
-render()
-
-input.value=""
+    let input = document.getElementById("taskInput");
+    let task = input.value;
+    if(task === "") return;
+    tasks.push(task);
+    saveTasks();
+    render();
+    input.value = "";
 }
 
 function render(){
+    let list = document.getElementById("taskList");
+    list.innerHTML = "";
+    tasks.forEach((task,index)=>{
+        let li = document.createElement("li");
+        li.innerText = task;
+        li.onclick = function(){
+            li.classList.toggle("done");
+        }
 
-let list=document.getElementById("taskList")
-list.innerHTML=""
+        let del = document.createElement("button");
+        del.innerText = "🗑";
+        del.className = "delete-btn";
+        del.onclick = function(e){
+            e.stopPropagation(); // Prevent marking as done
+            tasks.splice(index,1);
+            saveTasks();
+            render();
+        }
 
-tasks.forEach((task,index)=>{
-
-let li=document.createElement("li")
-li.innerText=task
-
-let del=document.createElement("button")
-del.innerText="Delete"
-
-del.onclick=function(){
-tasks.splice(index,1)
-saveTasks()
-render()
-}
-
-li.appendChild(del)
-
-list.appendChild(li)
-
-})
-
+        li.appendChild(del);
+        list.appendChild(li);
+    });
 }
 
 function saveTasks(){
-localStorage.setItem("tasks",JSON.stringify(tasks))
+    localStorage.setItem("tasks",JSON.stringify(tasks));
 }
 
 function sendReminder(){
-
-tasks.forEach(task=>{
-new Notification("Reminder: "+task)
-})
-
+    tasks.forEach(task=>{
+        new Notification("Reminder: "+task);
+    });
 }
 
-setInterval(sendReminder,86400000)
-
+setInterval(sendReminder,86400000);
 </script>
 
 </body>
