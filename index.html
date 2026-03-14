@@ -63,10 +63,12 @@ li {
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    cursor: pointer;
 }
 
-li.done { text-decoration: line-through; color: gray; }
+li.done {
+    text-decoration: line-through;
+    color: gray;
+}
 
 .delete-btn {
     background: #ef4444;
@@ -84,9 +86,15 @@ li.done { text-decoration: line-through; color: gray; }
     padding: 15px;
     border-radius: 12px;
     margin-top: 20px;
-    max-height: 200px;
+    max-height: 220px;
     overflow-y: auto;
     text-align: left;
+}
+
+.countdown {
+    font-weight: bold;
+    color: #4f46e5;
+    margin-left: 10px;
 }
 </style>
 </head>
@@ -108,13 +116,13 @@ li.done { text-decoration: line-through; color: gray; }
 </div>
 
 <script>
-// Register service worker for PWA
+// PWA service worker
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
     .then(() => console.log('Service Worker Registered'));
 }
 
-// Ask notification permission
+// Notifications
 if (Notification.permission !== "granted") {
     Notification.requestPermission();
 }
@@ -141,9 +149,8 @@ function render() {
     list.innerHTML = "";
     tasks.forEach((task,index) => {
         let li = document.createElement("li");
-        li.innerText = `${task.name} (${task.time})`;
-        li.onclick = function() { li.classList.toggle("done"); }
-
+        li.innerHTML = `<span>${task.name} (${task.time})</span><span class="countdown"></span>`;
+        
         let del = document.createElement("button");
         del.innerText = "🗑";
         del.className = "delete-btn";
@@ -175,18 +182,32 @@ function saveTasks() {
     localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-// Check reminders every minute
-function checkReminders() {
+// Countdown and notifications
+function updateCountdowns() {
     let now = new Date();
-    let currentTime = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
-    tasks.forEach(task => {
-        if(task.time === currentTime) {
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+
+    document.querySelectorAll("#taskList li").forEach((li, i) => {
+        let task = tasks[i];
+        let [taskH, taskM] = task.time.split(":").map(Number);
+
+        let diff = (taskH*60 + taskM) - (hours*60 + minutes);
+        if(diff < 0) diff += 24*60; // next day
+        let h = Math.floor(diff/60);
+        let m = diff % 60;
+
+        li.querySelector(".countdown").innerText = `(${h}h ${m}m left)`;
+
+        // Notification at exact minute
+        if(hours === taskH && minutes === taskM) {
             new Notification("Reminder: " + task.name);
         }
     });
 }
 
-setInterval(checkReminders, 60000);
+// Update every second
+setInterval(updateCountdowns, 1000);
 </script>
 </body>
 </html>
