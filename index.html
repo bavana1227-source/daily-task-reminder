@@ -3,33 +3,40 @@
 <head>
 <title>Daily Task Reminder</title>
 <style>
+/* Body & general layout */
 body {
-    font-family: 'comic sans ms', sans-serif;
+    font-family: 'Arial', sans-serif;
     background: #f0f4f8;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
     padding-top: 50px;
-    min-height: 100vh;
 }
 
+/* Main container */
 .container {
     background: #ffffff;
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    width: 320px;
+    width: 360px;
     text-align: center;
 }
 
+/* Headings */
 h1 {
     margin-bottom: 20px;
     color: #333;
 }
 
+h2 {
+    margin-top: 30px;
+    color: #555;
+}
+
+/* Input & button */
 input {
     padding: 12px;
-    width: 70%;
+    width: 65%;
     border-radius: 8px;
     border: 1px solid #ccc;
     margin-right: 5px;
@@ -50,10 +57,11 @@ button:hover {
     background: #4338ca;
 }
 
+/* Task list boxes */
 ul {
     list-style: none;
     padding: 0;
-    margin-top: 20px;
+    margin-top: 15px;
 }
 
 li {
@@ -65,6 +73,7 @@ li {
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    cursor: pointer;
 }
 
 li.done {
@@ -84,17 +93,33 @@ li.done {
 .delete-btn:hover {
     background: #b91c1c;
 }
+
+/* Secondary box for all tasks */
+.all-tasks-box {
+    background: #e0e7ff;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-<h1>Daily Task Reminder</h1>
-<input id="taskInput" placeholder="Enter a task">
-<button onclick="addTask()">Add</button>
+    <h1>Daily Task Reminder</h1>
 
-<ul id="taskList"></ul>
+    <input id="taskInput" placeholder="Enter a task">
+    <button onclick="addTask()">Add</button>
+
+    <ul id="taskList"></ul>
+
+    <h2>All Tasks So Far</h2>
+    <div class="all-tasks-box">
+        <ul id="allTasksList"></ul>
+    </div>
 </div>
 
 <script>
@@ -103,37 +128,40 @@ if (Notification.permission !== "granted") {
 }
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-
 render();
+renderAllTasks();
 
-function addTask(){
+function addTask() {
     let input = document.getElementById("taskInput");
     let task = input.value;
-    if(task === "") return;
+    if (task === "") return;
+
     tasks.push(task);
     saveTasks();
     render();
+    renderAllTasks();
     input.value = "";
 }
 
-function render(){
+function render() {
     let list = document.getElementById("taskList");
     list.innerHTML = "";
-    tasks.forEach((task,index)=>{
+    tasks.forEach((task, index) => {
         let li = document.createElement("li");
         li.innerText = task;
-        li.onclick = function(){
+        li.onclick = function() {
             li.classList.toggle("done");
         }
 
         let del = document.createElement("button");
         del.innerText = "🗑";
         del.className = "delete-btn";
-        del.onclick = function(e){
+        del.onclick = function(e) {
             e.stopPropagation(); // Prevent marking as done
-            tasks.splice(index,1);
+            tasks.splice(index, 1);
             saveTasks();
             render();
+            renderAllTasks();
         }
 
         li.appendChild(del);
@@ -141,17 +169,28 @@ function render(){
     });
 }
 
-function saveTasks(){
-    localStorage.setItem("tasks",JSON.stringify(tasks));
-}
-
-function sendReminder(){
-    tasks.forEach(task=>{
-        new Notification("Reminder: "+task);
+function renderAllTasks() {
+    let allList = document.getElementById("allTasksList");
+    allList.innerHTML = "";
+    tasks.forEach(task => {
+        let li = document.createElement("li");
+        li.innerText = task;
+        li.style.cursor = "default"; // Not clickable in all-tasks box
+        allList.appendChild(li);
     });
 }
 
-setInterval(sendReminder,86400000);
+function saveTasks() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function sendReminder() {
+    tasks.forEach(task => {
+        new Notification("Reminder: " + task);
+    });
+}
+
+setInterval(sendReminder, 86400000);
 </script>
 
 </body>
