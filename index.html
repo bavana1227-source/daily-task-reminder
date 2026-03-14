@@ -3,7 +3,6 @@
 <head>
 <title>Daily Task Reminder</title>
 <style>
-/* Body & general layout */
 body {
     font-family: 'Arial', sans-serif;
     background: #f0f4f8;
@@ -12,7 +11,6 @@ body {
     padding-top: 50px;
 }
 
-/* Main container */
 .container {
     background: #ffffff;
     padding: 30px;
@@ -22,7 +20,6 @@ body {
     text-align: center;
 }
 
-/* Headings */
 h1 {
     margin-bottom: 20px;
     color: #333;
@@ -33,10 +30,9 @@ h2 {
     color: #555;
 }
 
-/* Input & button */
-input {
+input, input[type="time"] {
     padding: 12px;
-    width: 65%;
+    width: 50%;
     border-radius: 8px;
     border: 1px solid #ccc;
     margin-right: 5px;
@@ -57,7 +53,6 @@ button:hover {
     background: #4338ca;
 }
 
-/* Task list boxes */
 ul {
     list-style: none;
     padding: 0;
@@ -94,7 +89,6 @@ li.done {
     background: #b91c1c;
 }
 
-/* Secondary box for all tasks */
 .all-tasks-box {
     background: #e0e7ff;
     padding: 15px;
@@ -102,16 +96,17 @@ li.done {
     margin-top: 20px;
     max-height: 200px;
     overflow-y: auto;
+    text-align: left;
 }
 </style>
 </head>
 
 <body>
-
 <div class="container">
     <h1>Daily Task Reminder</h1>
 
     <input id="taskInput" placeholder="Enter a task">
+    <input type="time" id="timeInput" value="09:00">
     <button onclick="addTask()">Add</button>
 
     <ul id="taskList"></ul>
@@ -127,28 +122,29 @@ if (Notification.permission !== "granted") {
     Notification.requestPermission();
 }
 
+// Each task now has a name and time
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 render();
 renderAllTasks();
 
 function addTask() {
-    let input = document.getElementById("taskInput");
-    let task = input.value;
-    if (task === "") return;
+    let taskName = document.getElementById("taskInput").value;
+    let taskTime = document.getElementById("timeInput").value;
+    if(taskName === "") return;
 
-    tasks.push(task);
+    tasks.push({name: taskName, time: taskTime});
     saveTasks();
     render();
     renderAllTasks();
-    input.value = "";
+    document.getElementById("taskInput").value = "";
 }
 
 function render() {
     let list = document.getElementById("taskList");
     list.innerHTML = "";
-    tasks.forEach((task, index) => {
+    tasks.forEach((task,index) => {
         let li = document.createElement("li");
-        li.innerText = task;
+        li.innerText = `${task.name} (${task.time})`;
         li.onclick = function() {
             li.classList.toggle("done");
         }
@@ -157,8 +153,8 @@ function render() {
         del.innerText = "🗑";
         del.className = "delete-btn";
         del.onclick = function(e) {
-            e.stopPropagation(); // Prevent marking as done
-            tasks.splice(index, 1);
+            e.stopPropagation();
+            tasks.splice(index,1);
             saveTasks();
             render();
             renderAllTasks();
@@ -174,8 +170,8 @@ function renderAllTasks() {
     allList.innerHTML = "";
     tasks.forEach(task => {
         let li = document.createElement("li");
-        li.innerText = task;
-        li.style.cursor = "default"; // Not clickable in all-tasks box
+        li.innerText = `${task.name} (${task.time})`;
+        li.style.cursor = "default";
         allList.appendChild(li);
     });
 }
@@ -184,14 +180,19 @@ function saveTasks() {
     localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-function sendReminder() {
+// Check every minute if a task should be notified
+function checkReminders() {
+    let now = new Date();
+    let currentTime = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
     tasks.forEach(task => {
-        new Notification("Reminder: " + task);
+        if(task.time === currentTime) {
+            new Notification("Reminder: " + task.name);
+        }
     });
 }
 
-setInterval(sendReminder, 86400000);
+// Check reminders every minute
+setInterval(checkReminders, 60000);
 </script>
-
 </body>
 </html>
