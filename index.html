@@ -65,9 +65,11 @@ li {
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-li.done {
-    text-decoration: line-through;
-    color: gray;
+li.done { text-decoration: line-through; color: gray; }
+
+li.upcoming {
+    background: #fef3c7; /* light yellow for next task */
+    border: 1px solid #f59e0b;
 }
 
 .delete-btn {
@@ -82,10 +84,11 @@ li.done {
 .delete-btn:hover { background: #b91c1c; }
 
 .all-tasks-box {
-    background: #e0e7ff;
+    background: #ede9fe; /* light purple */
     padding: 15px;
     border-radius: 12px;
     margin-top: 20px;
+    margin-left: -30px; /* shift slightly left */
     max-height: 220px;
     overflow-y: auto;
     text-align: left;
@@ -147,10 +150,25 @@ function addTask() {
 function render() {
     let list = document.getElementById("taskList");
     list.innerHTML = "";
+
+    // Find the next upcoming task
+    let now = new Date();
+    let minDiff = 24*60;
+    let nextIndex = -1;
+
+    tasks.forEach((task,index) => {
+        let [taskH, taskM] = task.time.split(":").map(Number);
+        let diff = (taskH*60 + taskM) - (now.getHours()*60 + now.getMinutes());
+        if(diff < 0) diff += 24*60; // next day
+        if(diff < minDiff) { minDiff = diff; nextIndex = index; }
+    });
+
     tasks.forEach((task,index) => {
         let li = document.createElement("li");
         li.innerHTML = `<span>${task.name} (${task.time})</span><span class="countdown"></span>`;
-        
+
+        if(index === nextIndex) li.classList.add("upcoming");
+
         let del = document.createElement("button");
         del.innerText = "🗑";
         del.className = "delete-btn";
@@ -193,20 +211,19 @@ function updateCountdowns() {
         let [taskH, taskM] = task.time.split(":").map(Number);
 
         let diff = (taskH*60 + taskM) - (hours*60 + minutes);
-        if(diff < 0) diff += 24*60; // next day
+        if(diff < 0) diff += 24*60;
         let h = Math.floor(diff/60);
         let m = diff % 60;
 
         li.querySelector(".countdown").innerText = `(${h}h ${m}m left)`;
 
-        // Notification at exact minute
         if(hours === taskH && minutes === taskM) {
             new Notification("Reminder: " + task.name);
         }
     });
 }
 
-// Update every second
+// Update countdown every second
 setInterval(updateCountdowns, 1000);
 </script>
 </body>
