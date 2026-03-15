@@ -2,263 +2,304 @@
 <html>
 <head>
 <title>Daily Task Reminder</title>
-
-<!-- PWA manifest -->
 <link rel="manifest" href="manifest.json">
 
 <style>
-body {
-    font-family: 'Arial', sans-serif;
-    background: #f0f4f8;
-    display: flex;
-    justify-content: flex-start;
-    padding: 50px;
-    gap: 40px;
+
+body{
+font-family:Arial;
+background:#f0f4f8;
+display:flex;
+gap:50px;
+padding:50px;
 }
 
-/* Main task container */
-.container {
-    background: #ffffff;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    width: 360px;
-    text-align: center;
+/* LEFT PANEL */
+
+.allTasks{
+width:280px;
+background:#ede9fe;
+padding:20px;
+border-radius:14px;
+box-shadow:0 8px 20px rgba(0,0,0,0.1);
+height:fit-content;
 }
 
-h1 { margin-bottom: 20px; color: #333; }
-
-/* Inputs and buttons */
-input, input[type="time"] {
-    padding: 12px;
-    width: 50%;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    margin-right: 5px;
-    font-size: 14px;
+.allTasks h2{
+margin-top:0;
 }
 
-button {
-    padding: 12px 15px;
-    border: none;
-    border-radius: 8px;
-    background: #4f46e5;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
+.allTasks li{
+margin-bottom:8px;
 }
 
-button:hover { background: #4338ca; }
+/* MAIN APP */
 
-ul {
-    list-style: none;
-    padding: 0;
-    margin-top: 15px;
+.container{
+background:white;
+padding:30px;
+border-radius:16px;
+box-shadow:0 8px 20px rgba(0,0,0,0.1);
+width:380px;
+text-align:center;
 }
 
-/* Task items */
-li {
-    background: #f9fafb;
-    margin-bottom: 10px;
-    padding: 12px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+input{
+padding:12px;
+border-radius:8px;
+border:1px solid #ccc;
 }
 
-li.done { text-decoration: line-through; color: gray; }
-
-li.upcoming {
-    background: #fef3c7;
-    border: 1px solid #f59e0b;
-    transition: box-shadow 0.5s, transform 0.5s;
+button{
+padding:12px 15px;
+border:none;
+border-radius:8px;
+background:#4f46e5;
+color:white;
+font-weight:bold;
+cursor:pointer;
 }
 
-/* Glow/pulse animation */
-li.upcoming.glow {
-    box-shadow: 0 0 20px 5px #f59e0b;
-    transform: scale(1.02);
+button:hover{
+background:#4338ca;
 }
 
-.delete-btn {
-    background: #ef4444;
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 8px;
-    cursor: pointer;
+ul{
+list-style:none;
+padding:0;
 }
 
-.delete-btn:hover { background: #b91c1c; }
+/* TASK CARDS */
 
-.countdown {
-    font-weight: bold;
-    color: #4f46e5;
-    margin-left: 10px;
+.taskCard{
+background:#f9fafb;
+padding:14px;
+border-radius:12px;
+margin-bottom:12px;
+box-shadow:0 4px 10px rgba(0,0,0,0.05);
+text-align:left;
 }
 
-/* All Tasks So Far box - fully separate */
-.all-tasks-container {
-    width: 300px;
-    background: #ede9fe;
-    padding: 20px;
-    border-radius: 12px;
-    text-align: left;
-    height: fit-content;
+.taskTop{
+display:flex;
+justify-content:space-between;
+align-items:center;
 }
 
-.all-tasks-container h2 {
-    margin-top: 0;
-    color: #555;
+/* PROGRESS BAR */
+
+.progressBar{
+width:100%;
+height:8px;
+background:#e5e7eb;
+border-radius:6px;
+margin-top:10px;
+overflow:hidden;
 }
 
-.all-tasks-container ul {
-    max-height: 400px;
-    overflow-y: auto;
-    padding-left: 15px;
+.progress{
+height:8px;
+background:#4f46e5;
+width:0%;
 }
+
+/* UPCOMING TASK */
+
+.upcoming{
+border:2px solid #f59e0b;
+}
+
+/* GLOW */
+
+.glow{
+box-shadow:0 0 20px #f59e0b;
+}
+
+.countdown{
+font-weight:bold;
+color:#4f46e5;
+font-size:13px;
+}
+
+.delete{
+background:#ef4444;
+padding:5px 8px;
+font-size:12px;
+}
+
 </style>
 </head>
 
 <body>
 
-<!-- Main Task Box -->
-<div class="container">
-    <h1>Daily Task Reminder</h1>
-    <input id="taskInput" placeholder="Enter a task">
-    <input type="time" id="timeInput" value="09:00">
-    <button onclick="addTask()">Add</button>
-
-    <ul id="taskList"></ul>
+<div class="allTasks">
+<h2>All Tasks</h2>
+<ul id="allTasksList"></ul>
 </div>
 
-<!-- All Tasks So Far Box -->
-<div class="all-tasks-container">
-    <h2>All Tasks So Far</h2>
-    <ul id="allTasksList"></ul>
+<div class="container">
+
+<h1>Daily Task Reminder</h1>
+
+<input id="taskInput" placeholder="Task">
+<input type="time" id="timeInput">
+
+<button onclick="addTask()">Add</button>
+
+<ul id="taskList"></ul>
+
 </div>
 
 <script>
-// PWA service worker
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-    .then(() => console.log('Service Worker Registered'));
-}
 
-// Notifications
 if (Notification.permission !== "granted") {
-    Notification.requestPermission();
+Notification.requestPermission();
 }
 
-// Load tasks
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
 render();
 renderAllTasks();
 
-function addTask() {
-    let taskName = document.getElementById("taskInput").value;
-    let taskTime = document.getElementById("timeInput").value;
-    if(taskName === "") return;
+function addTask(){
 
-    tasks.push({name: taskName, time: taskTime});
-    saveTasks();
-    render();
-    renderAllTasks();
-    document.getElementById("taskInput").value = "";
+let name=document.getElementById("taskInput").value
+let time=document.getElementById("timeInput").value
+
+if(name==="") return
+
+tasks.push({name,time})
+
+save()
+render()
+renderAllTasks()
+
+document.getElementById("taskInput").value=""
 }
 
-function render() {
-    let list = document.getElementById("taskList");
-    list.innerHTML = "";
+function render(){
 
-    // Find the next upcoming task
-    let now = new Date();
-    let minDiff = 24*60;
-    let nextIndex = -1;
+let list=document.getElementById("taskList")
+list.innerHTML=""
 
-    tasks.forEach((task,index) => {
-        let [taskH, taskM] = task.time.split(":").map(Number);
-        let diff = (taskH*60 + taskM) - (now.getHours()*60 + now.getMinutes());
-        if(diff < 0) diff += 24*60; // next day
-        if(diff < minDiff) { minDiff = diff; nextIndex = index; }
-    });
+let now=new Date()
 
-    tasks.forEach((task,index) => {
-        let li = document.createElement("li");
-        li.innerHTML = `<span>${task.name} (${task.time})</span><span class="countdown"></span>`;
-        li.classList.remove("upcoming", "glow");
+let nextIndex=-1
+let min=9999
 
-        if(index === nextIndex) {
-            li.classList.add("upcoming");
-            // Add glow if <10 minutes remaining
-            let [taskH, taskM] = task.time.split(":").map(Number);
-            let nowMinutes = now.getHours()*60 + now.getMinutes();
-            let taskMinutes = taskH*60 + taskM;
-            let diffMinutes = taskMinutes - nowMinutes;
-            if(diffMinutes < 0) diffMinutes += 24*60;
-            if(diffMinutes <= 10) li.classList.add("glow");
-        }
+tasks.forEach((task,i)=>{
 
-        let del = document.createElement("button");
-        del.innerText = "🗑";
-        del.className = "delete-btn";
-        del.onclick = function(e) {
-            e.stopPropagation();
-            tasks.splice(index,1);
-            saveTasks();
-            render();
-            renderAllTasks();
-        }
+let [h,m]=task.time.split(":").map(Number)
 
-        li.appendChild(del);
-        list.appendChild(li);
-    });
+let diff=(h*60+m)-(now.getHours()*60+now.getMinutes())
+if(diff<0) diff+=1440
+
+if(diff<min){
+min=diff
+nextIndex=i
 }
 
-function renderAllTasks() {
-    let allList = document.getElementById("allTasksList");
-    allList.innerHTML = "";
-    tasks.forEach(task => {
-        let li = document.createElement("li");
-        li.innerText = `${task.name} (${task.time})`;
-        li.style.cursor = "default";
-        allList.appendChild(li);
-    });
+})
+
+tasks.forEach((task,i)=>{
+
+let card=document.createElement("div")
+card.className="taskCard"
+
+if(i===nextIndex) card.classList.add("upcoming")
+
+let top=document.createElement("div")
+top.className="taskTop"
+
+let title=document.createElement("span")
+title.innerText=task.name+" ("+task.time+")"
+
+let del=document.createElement("button")
+del.innerText="🗑"
+del.className="delete"
+
+del.onclick=()=>{
+tasks.splice(i,1)
+save()
+render()
+renderAllTasks()
 }
 
-function saveTasks() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+top.appendChild(title)
+top.appendChild(del)
+
+let countdown=document.createElement("div")
+countdown.className="countdown"
+
+let progressBar=document.createElement("div")
+progressBar.className="progressBar"
+
+let progress=document.createElement("div")
+progress.className="progress"
+
+progressBar.appendChild(progress)
+
+card.appendChild(top)
+card.appendChild(countdown)
+card.appendChild(progressBar)
+
+list.appendChild(card)
+
+})
+
 }
 
-// Countdown and notifications
-function updateCountdowns() {
-    let now = new Date();
-    let hours = now.getHours();
-    let minutes = now.getMinutes();
+function renderAllTasks(){
 
-    document.querySelectorAll("#taskList li").forEach((li, i) => {
-        let task = tasks[i];
-        let [taskH, taskM] = task.time.split(":").map(Number);
+let list=document.getElementById("allTasksList")
+list.innerHTML=""
 
-        let diff = (taskH*60 + taskM) - (hours*60 + minutes);
-        if(diff < 0) diff += 24*60;
-        let h = Math.floor(diff/60);
-        let m = diff % 60;
+tasks.forEach(task=>{
+let li=document.createElement("li")
+li.innerText=task.name+" ("+task.time+")"
+list.appendChild(li)
+})
 
-        li.querySelector(".countdown").innerText = `(${h}h ${m}m left)`;
-
-        if(hours === taskH && minutes === taskM) {
-            new Notification("Reminder: " + task.name);
-        }
-    });
-
-    render(); // Update glow on upcoming task
 }
 
-// Update countdown every second
-setInterval(updateCountdowns, 1000);
+function save(){
+localStorage.setItem("tasks",JSON.stringify(tasks))
+}
+
+function update(){
+
+let now=new Date()
+
+document.querySelectorAll(".taskCard").forEach((card,i)=>{
+
+let task=tasks[i]
+
+let [h,m]=task.time.split(":").map(Number)
+
+let diff=(h*60+m)-(now.getHours()*60+now.getMinutes())
+if(diff<0) diff+=1440
+
+let hours=Math.floor(diff/60)
+let mins=diff%60
+
+card.querySelector(".countdown").innerText=
+hours+"h "+mins+"m left"
+
+let progress=(1-(diff/1440))*100
+card.querySelector(".progress").style.width=progress+"%"
+
+if(diff<=10) card.classList.add("glow")
+
+if(now.getHours()==h && now.getMinutes()==m){
+new Notification("Reminder: "+task.name)
+}
+
+})
+
+}
+
+setInterval(update,1000)
+
 </script>
 
 </body>
