@@ -182,10 +182,13 @@ tasks.forEach((task,i)=>{
 let card=document.createElement("div")
 card.className="taskCard"
 
-card.innerHTML=`
+card.innerHTML = `
 <b>${task.name}</b> (${task.time})
 <div class="category ${task.category.toLowerCase()}">${task.category}</div>
 <div class="countdown" id="cd${i}"></div>
+
+<button onclick="shareTask('${task.name}','${task.time}')">Share</button>
+
 <button class="delete" onclick="removeTask(${i})">Delete</button>
 `
 
@@ -262,6 +265,26 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js")
 }
 
+function shareTask(name,time){
+
+const text = `Reminder: ${name} at ${time}`
+
+if(navigator.share){
+
+navigator.share({
+title:"Task Reminder",
+text:text
+})
+
+}else{
+
+navigator.clipboard.writeText(text)
+alert("Task copied! Send it to a friend.")
+
+}
+
+}
+  
 </script>
 
 </body>
