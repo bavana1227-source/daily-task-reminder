@@ -100,9 +100,14 @@ background:#ef4444;
 
 <body>
 
-<div class="allTasks">
-<h3>All Tasks</h3>
-<ul id="allTasks"></ul>
+<div class="calendar">
+
+<h3>Today's Tasks</h3>
+<ul id="todayTasks"></ul>
+
+<h3>Future Tasks</h3>
+<ul id="futureTasks"></ul>
+
 </div>
 
 <div class="container">
@@ -110,7 +115,7 @@ background:#ef4444;
 <h2>Task Reminder</h2>
 
 <input id="taskInput" placeholder="Task">
-
+<input type="date" id="dateInput">
 <input type="time" id="timeInput">
 
 <select id="category">
@@ -145,21 +150,38 @@ let tasks=JSON.parse(localStorage.getItem("tasks"))||[]
 
 render()
 
-function addTask(){
+let todayList=document.getElementById("todayTasks")
+let futureList=document.getElementById("futureTasks")
 
-let name=document.getElementById("taskInput").value
-let time=document.getElementById("timeInput").value
-let category=document.getElementById("category").value
+todayList.innerHTML=""
+futureList.innerHTML=""
 
-if(name==="")return
+let today=new Date().toISOString().split("T")[0]
+
+tasks.forEach(task=>{
+
+let li=document.createElement("li")
+li.innerText=task.time+" - "+task.name
+
+if(task.date===today){
+
+todayList.appendChild(li)
+
+}else{
+
+futureList.appendChild(li)
+
+}
+
+})
 
 tasks.push({
 name,
+date,
 time,
 category,
 notified:false
 })
-
 save()
 render()
 
