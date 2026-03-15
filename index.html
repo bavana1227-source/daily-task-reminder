@@ -33,6 +33,40 @@ background:#4b5563;
 background:#4338ca;
 }
 
+.allTasks{
+  background:#ede9fe;       /* light purple */
+  padding:20px;
+  border-radius:14px;
+  width:250px;
+  height:fit-content;
+  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+.calendar{
+  background:#fff;
+  padding:20px;
+  border-radius:14px;
+  width:250px;
+  height:fit-content;
+  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+.taskCard{
+  background:#f9fafb;
+  padding:14px;
+  border-radius:10px;
+  margin-bottom:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+body{
+  display:flex;
+  gap:60px;      /* more space between boxes */
+  padding:40px;
+  background:#f0f4f8;
+  font-family:Arial;
+}
+
 /* PANELS */
 
 .container{
@@ -134,7 +168,12 @@ background:#ef4444;
 <div id="taskList"></div>
 
 </div>
+<div class="allTasks">
+  <h3>All Tasks</h3>
+  <ul id="allTasksList"></ul>
+</div>
 
+  
 <div class="calendar">
 <h3>Today's Tasks</h3>
 <ul id="calendarTasks"></ul>
@@ -150,84 +189,128 @@ let tasks=JSON.parse(localStorage.getItem("tasks"))||[]
 
 render()
 
-let todayList=document.getElementById("todayTasks")
-let futureList=document.getElementById("futureTasks")
-
-todayList.innerHTML=""
-futureList.innerHTML=""
-
-let today=new Date().toISOString().split("T")[0]
-
-tasks.forEach(task=>{
-
-let li=document.createElement("li")
-li.innerText=task.time+" - "+task.name
-
-if(task.date===today){
-
-todayList.appendChild(li)
-
-}else{
-
-futureList.appendChild(li)
-
-}
-
-})
-
-tasks.push({
-name,
-date,
-time,
-category,
-notified:false
-})
-save()
-render()
-
-document.getElementById("taskInput").value=""
-
-}
-
 function render(){
 
-let list=document.getElementById("taskList")
-let all=document.getElementById("allTasks")
-let cal=document.getElementById("calendarTasks")
+  let list = document.getElementById("taskList")
+  let all = document.getElementById("allTasks")
+  let todayList = document.getElementById("todayTasks")
+  let futureList = document.getElementById("futureTasks")
 
-list.innerHTML=""
-all.innerHTML=""
-cal.innerHTML=""
+  // Clear all sections
+  list.innerHTML = ""
+  all.innerHTML = ""
+  todayList.innerHTML = ""
+  futureList.innerHTML = ""
 
-tasks.forEach((task,i)=>{
+  let today = new Date().toISOString().split("T")[0]
 
-let card=document.createElement("div")
-card.className="taskCard"
+  tasks.forEach((task, i) => {
 
-card.innerHTML = `
-<b>${task.name}</b> (${task.time})
-<div class="category ${task.category.toLowerCase()}">${task.category}</div>
-<div class="countdown" id="cd${i}"></div>
+    // ---- Task Card in main container ----
+    let card = document.createElement("div")
+    card.className = "taskCard"
 
-<button onclick="shareTask('${task.name}','${task.time}')">Share</button>
+    card.innerHTML = `
+      <b>${task.name}</b> (${task.time})
+      <div class="category ${task.category.toLowerCase()}">${task.category}</div>
+      <div class="countdown" id="cd${i}"></div>
+      <button onclick="shareTask('${task.name}','${task.time}')">Share</button>
+      <button class="delete" onclick="removeTask(${i})">Delete</button>
+    `
+    list.appendChild(card)
 
-<button class="delete" onclick="removeTask(${i})">Delete</button>
-`
+    // ---- All Tasks Box ----
+    let liAll = document.createElement("li")
+    liAll.innerText = task.name + " (" + task.time + ")"
+    all.appendChild(liAll)
 
-list.appendChild(card)
+    // ---- Sort tasks into Today / Future ----
+    let liDate = document.createElement("li")
+    liDate.innerText = task.time + " - " + task.name
 
-let li=document.createElement("li")
-li.innerText=task.name+" ("+task.time+")"
-all.appendChild(li)
+    if(task.date === today){
+      todayList.appendChild(liDate)
+    } else {
+      futureList.appendChild(liDate)
+    }
 
-let li2=document.createElement("li")
-li2.innerText=task.time+" - "+task.name
-cal.appendChild(li2)
+  })
+}
 
-})
+function addTask() {
+  let name = document.getElementById("taskInput").value
+  let date = document.getElementById("dateInput").value
+  let time = document.getElementById("timeInput").value
+  let category = document.getElementById("category").value
+
+  if(name === "" || date === "") return
+
+  // Add the new task
+  tasks.push({
+    name,
+    date,
+    time,
+    category,
+    notified: false
+  })
+
+  save()
+  render()
+
+  // Clear inputs
+  document.getElementById("taskInput").value = ""
+  document.getElementById("dateInput").value = ""
+  document.getElementById("timeInput").value = ""
+
 
 }
 
+function render() {
+  let list = document.getElementById("taskList")
+  let todayList = document.getElementById("todayTasks")
+  let futureList = document.getElementById("futureTasks")
+  let allList = document.getElementById("allTasksList") // new UL for all tasks
+
+  
+
+  // Clear all sections
+  list.innerHTML = ""
+  todayList.innerHTML = ""
+  futureList.innerHTML = ""
+  allList.innerHTML = ""
+
+  let today = new Date().toISOString().split("T")[0]
+
+  tasks.forEach((task, i) => {
+    // ---- Main Task Card ----
+    let card = document.createElement("div")
+    card.className = "taskCard"
+
+    card.innerHTML = `
+      <b>${task.name}</b> (${task.time})
+      <div class="category ${task.category.toLowerCase()}">${task.category}</div>
+      <div class="countdown" id="cd${i}"></div>
+      <button onclick="shareTask('${task.name}','${task.time}')">Share</button>
+      <button class="delete" onclick="removeTask(${i})">Delete</button>
+    `
+    list.appendChild(card)
+
+    // ---- All Tasks ----
+    let liAll = document.createElement("li")
+    liAll.innerText = task.name + " (" + task.time + ")"
+    allList.appendChild(liAll)
+
+    // ---- Today / Future ----
+    let liDate = document.createElement("li")
+    liDate.innerText = task.time + " - " + task.name
+
+    if(task.date === today){
+      todayList.appendChild(liDate)
+    } else {
+      futureList.appendChild(liDate)
+    }
+  })
+}
 function removeTask(i){
 
 tasks.splice(i,1)
