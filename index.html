@@ -258,6 +258,9 @@ setInterval(update,1000)
 function toggleDark(){
 document.body.classList.toggle("dark")
 }
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+}
 
 </script>
 
