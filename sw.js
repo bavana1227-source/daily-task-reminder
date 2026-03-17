@@ -18,3 +18,17 @@ self.addEventListener("fetch", e => {
     })
   )
 })
+self.addEventListener("notificationclick", function(event) {
+  event.notification.close();
+});
+
+self.addEventListener("push", function(event) {
+  const data = event.data ? event.data.text() : "Reminder!";
+
+  event.waitUntil(
+    self.registration.showNotification("Task Reminder", {
+      body: data,
+      icon: "/icon.png"
+    })
+  );
+});
