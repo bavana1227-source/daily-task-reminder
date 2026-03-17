@@ -126,6 +126,13 @@ input, select { padding: 8px; margin: 5px 0; width: 90%; border-radius: 6px; bor
 </div>
 
 <script>
+  document.addEventListener("click", () => {
+  let audio = new Audio("sound.mp3");
+  audio.play().then(() => {
+    audio.pause();
+    audio.currentTime = 0;
+  }).catch(()=>{});
+}, { once: true });
 if(Notification.permission !== "granted") Notification.requestPermission();
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
@@ -217,7 +224,16 @@ if(diff < 0) return;
     if(cd) cd.innerText = hours + "h " + mins + "m left";
 
     // Trigger notification once
-    if(now.getHours() === h && now.getMinutes() === m && !task.notified){
+   if(now.getHours() === h && now.getMinutes() === m && !task.notified){
+  new Notification("Reminder: " + task.name);
+
+  // SOUND
+  let audio = new Audio("sound.mp3");
+  audio.play().catch(() => {});
+
+  task.notified = true;
+  save();
+}
       new Notification("Reminder: " + task.name);
       task.notified = true;
       save();
