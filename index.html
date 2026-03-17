@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>Daily Task Reminder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body {
   font-family: Arial;
@@ -13,62 +14,82 @@ body {
 }
 
 /* DARK MODE */
-.dark { background:#1f2937; color:white; }
-.dark .container { background:#374151; }
-.dark .taskCard { background:#4b5563; }
-.dark .allTasks { background:#4338ca; }
+.dark {
+  background: #1f2937;
+  color: white;
+}
+.dark .container { background: #374151; }
+.dark .taskCard { background: #4b5563; }
+.dark .allTasks { background: #4338ca; }
+.dark .calendar { background: #4b5563; color: white; }
 
 /* PANELS */
 .container {
-  background:white;
-  padding:25px;
-  border-radius:15px;
-  width:380px;
-  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  width: 380px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
-
-.allTasks, .calendar {
-  background:#ede9fe;
-  padding:20px;
-  border-radius:14px;
-  width:250px;
-  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+.allTasks {
+  background: #ede9fe;
+  padding: 20px;
+  border-radius: 14px;
+  width: 250px;
   height: fit-content;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.calendar {
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  width: 250px;
+  height: fit-content;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
+/* TASK CARD */
 .taskCard {
-  background:#f9fafb;
-  padding:14px;
-  border-radius:10px;
-  margin-bottom:10px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+  background: #f9fafb;
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
-
-.category { font-size:12px; font-weight:bold; }
-.school {color:#2563eb}
-.work {color:#16a34a}
-.personal {color:#db2777}
-.health {color:#ea580c}
-
-.countdown { font-size:13px; color:#4f46e5; }
-
+.category {
+  font-size: 12px;
+  font-weight: bold;
+}
+.school { color: #2563eb; }
+.work { color: #16a34a; }
+.personal { color: #db2777; }
+.health { color: #ea580c; }
+.countdown { font-size: 13px; color: #4f46e5; }
 button {
-  padding:8px 12px;
-  border:none;
-  border-radius:6px;
-  background:#4f46e5;
-  color:white;
-  cursor:pointer;
-  margin-top:5px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: white;
+  cursor: pointer;
+  margin-right: 5px;
 }
+.delete { background: #ef4444; }
 
-.delete { background:#ef4444; }
-
+input, select { padding: 8px; margin: 5px 0; width: 90%; border-radius: 6px; border: 1px solid #ccc; }
 </style>
 </head>
 <body>
 
-<!-- Task Input Panel -->
+<!-- Calendar Panel: Today / Future -->
+<div class="calendar">
+  <h3>Today's Tasks</h3>
+  <ul id="todayTasks"></ul>
+  <h3>Future Tasks</h3>
+  <ul id="futureTasks"></ul>
+</div>
+
+<!-- Main Task Input Panel -->
 <div class="container">
   <h2>Task Reminder</h2>
   <input id="taskInput" placeholder="Task">
@@ -85,14 +106,6 @@ button {
   <div id="taskList"></div>
 </div>
 
-<!-- Today / Future Panel -->
-<div class="calendar">
-  <h3>Today's Tasks</h3>
-  <ul id="todayTasks"></ul>
-  <h3>Future Tasks</h3>
-  <ul id="futureTasks"></ul>
-</div>
-
 <!-- All Tasks Panel -->
 <div class="allTasks">
   <h3>All Tasks</h3>
@@ -100,29 +113,11 @@ button {
 </div>
 
 <script>
-if(Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
+if(Notification.permission !== "granted") Notification.requestPermission();
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-function addTask() {
-  let name = document.getElementById("taskInput").value;
-  let date = document.getElementById("dateInput").value;
-  let time = document.getElementById("timeInput").value;
-  let category = document.getElementById("category").value;
-
-  if(!name || !date || !time) return;
-
-  tasks.push({name, date, time, category, notified:false});
-  save();
-  render();
-
-  document.getElementById("taskInput").value = "";
-  document.getElementById("dateInput").value = "";
-  document.getElementById("timeInput").value = "";
-}
-
+// --- Render function ---
 function render() {
   let list = document.getElementById("taskList");
   let todayList = document.getElementById("todayTasks");
@@ -136,87 +131,111 @@ function render() {
 
   let today = new Date().toISOString().split("T")[0];
 
-  tasks.forEach((task,i)=>{
-    // Main Task Card
+  tasks.forEach((task, i) => {
+    // Task Card
     let card = document.createElement("div");
     card.className = "taskCard";
     card.innerHTML = `
       <b>${task.name}</b> (${task.time})
       <div class="category ${task.category.toLowerCase()}">${task.category}</div>
       <div class="countdown" id="cd${i}"></div>
-      <button onclick="shareTask('${task.name}','${task.date}','${task.time}')">Share</button>
+      <button onclick="shareTask('${task.name}','${task.time}')">Share</button>
       <button class="delete" onclick="removeTask(${i})">Delete</button>
     `;
     list.appendChild(card);
 
     // All Tasks
     let liAll = document.createElement("li");
-    liAll.innerText = `${task.name} (${task.date} ${task.time})`;
+    liAll.innerText = task.name + " (" + task.time + ")";
     allList.appendChild(liAll);
 
     // Today / Future
     let liDate = document.createElement("li");
-    liDate.innerText = `${task.time} - ${task.name}`;
+    liDate.innerText = task.time + " - " + task.name;
     if(task.date === today) todayList.appendChild(liDate);
     else futureList.appendChild(liDate);
   });
 }
 
-function removeTask(i){
-  tasks.splice(i,1);
-  save();
-  render();
+// --- Add Task ---
+function addTask() {
+  let name = document.getElementById("taskInput").value;
+  let date = document.getElementById("dateInput").value;
+  let time = document.getElementById("timeInput").value;
+  let category = document.getElementById("category").value;
+  if(name === "" || date === "") return;
+
+  tasks.push({name, date, time, category, notified:false});
+  save(); render();
+
+  document.getElementById("taskInput").value = "";
+  document.getElementById("dateInput").value = "";
+  document.getElementById("timeInput").value = "";
 }
 
-function save(){
+// --- Remove Task ---
+function removeTask(i) {
+  tasks.splice(i,1);
+  save(); render();
+}
+
+// --- Save ---
+function save() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-function update(){
+// --- Update countdown & notifications ---
+function update() {
   let now = new Date();
-  tasks.forEach((task,i)=>{
-    let taskTime = new Date(`${task.date}T${task.time}`);
-    let diff = taskTime - now;
+  let today = now.toISOString().split("T")[0];
+
+  tasks.forEach((task, i) => {
+    let [h,m] = task.time.split(":").map(Number);
+    let diff = (h*60+m) - (now.getHours()*60 + now.getMinutes());
+    if(diff < 0) diff += 1440;
+
+    let hours = Math.floor(diff/60);
+    let mins = diff % 60;
+
     let cd = document.getElementById("cd"+i);
+    if(cd) cd.innerText = hours + "h " + mins + "m left";
 
-    if(cd){
-      if(diff>0){
-        let hours = Math.floor(diff/1000/60/60);
-        let mins = Math.floor((diff/1000/60)%60);
-        cd.innerText = `${hours}h ${mins}m left`;
-      } else {
-        cd.innerText = "Due!";
-      }
-    }
-
-    // Notification once
-    if(diff<=0 && !task.notified){
-      new Notification(`Reminder: ${task.name}`);
+    // Trigger notification once
+    if(now.getHours() === h && now.getMinutes() === m && !task.notified){
+      new Notification("Reminder: " + task.name);
       task.notified = true;
       save();
+
+      // Remove task after 10 minutes if it's today
+      if(task.date === today){
+        setTimeout(() => {
+          let index = tasks.findIndex(t => t.name === task.name && t.date === task.date && t.time === task.time);
+          if(index !== -1){ tasks.splice(index,1); save(); render(); }
+        }, 600000); // 10 minutes
+      }
     }
   });
 }
+
 setInterval(update, 1000);
 
-/* Dark Mode */
-function toggleDark(){
+// --- Dark mode toggle ---
+function toggleDark() {
   document.body.classList.toggle("dark");
 }
 
-function shareTask(name,date,time){
-  const text = `Task: ${name}\nDate: ${date}\nTime: ${time}`;
+// --- Share task ---
+function shareTask(name, time){
+  const text = `Reminder: ${name} at ${time}`;
   if(navigator.share){
-    navigator.share({title:"Task Reminder", text:text});
+    navigator.share({ title:"Task Reminder", text });
   } else {
     navigator.clipboard.writeText(text);
     alert("Task copied! Send it to a friend.");
   }
 }
 
-// Initial render
 render();
 </script>
-
 </body>
 </html>
