@@ -12,6 +12,19 @@ body {
   padding: 40px;
   transition: 0.3s;
 }
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    padding: 15px;
+    gap: 20px;
+  }
+
+  .container,
+  .calendar,
+  .allTasks {
+    width: 100%;
+  }
+}
 
 /* DARK MODE */
 .dark {
@@ -20,7 +33,7 @@ body {
 }
 .dark .container { background: #374151; }
 .dark .taskCard { background: #4b5563; }
-.dark .allTasks { background: #4338ca; }
+.dark .allTasks { background: #195f33ff; }
 .dark .calendar { background: #4b5563; color: white; }
 
 /* PANELS */
@@ -32,7 +45,7 @@ body {
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 .allTasks {
-  background: #ede9fe;
+  background: #c4e7d1ff;
   padding: 20px;
   border-radius: 14px;
   width: 250px;
