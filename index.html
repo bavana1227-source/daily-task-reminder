@@ -203,9 +203,12 @@ function update() {
   let today = now.toISOString().split("T")[0];
 
   tasks.forEach((task, i) => {
+   if(!task.time) return;
     let [h,m] = task.time.split(":").map(Number);
-    let diff = (h*60+m) - (now.getHours()*60 + now.getMinutes());
-    if(diff < 0) diff += 1440;
+    let taskDateTime = new Date(task.date + "T" + task.time);
+let diff = Math.floor((taskDateTime - now) / 60000);
+
+if(diff < 0) return;
 
     let hours = Math.floor(diff/60);
     let mins = diff % 60;
@@ -230,7 +233,7 @@ function update() {
   });
 }
 
-setInterval(update, 1000);
+setInterval(update, 60000); // every minute
 
 // --- Dark mode toggle ---
 function toggleDark() {
