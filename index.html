@@ -10,8 +10,14 @@ body {
   font-family: Arial;
   background: #cfe6fdff;
   display: flex;
+  flex-wrap: wrap;           /* allow wrapping on small screens */
+  justify-content: center;    /* center horizontally */
+  align-items: flex-start;    /* top-align vertically */
   gap: 40px;
   padding: 40px;
+  min-height: 100vh;          /* ensure full height */
+  box-sizing: border-box;
+}
 }
 @media (max-width: 768px) {
   body { flex-direction: column; padding: 15px; }
