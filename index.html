@@ -101,7 +101,7 @@ input, select { width: 90%; margin: 5px 0; padding: 8px; }
   <button onclick="addOrUpdateTask()" id="mainBtn">Add</button>
   <button onclick="toggleDark()">🌙 Dark</button>
 
-  <div id="taskList"></div>
+ 
 </div>
 
 <div class="allTasks">
@@ -213,7 +213,7 @@ function render(){
       <button class="edit" onclick="editTask(${i})">Edit</button>
       <button class="delete" onclick="removeTask(${i})">Delete</button>
     `;
-    taskList.appendChild(card);
+ 
 
     let li = document.createElement("li");
     li.innerText = t.time + " - " + t.name;
@@ -221,9 +221,9 @@ function render(){
     if(t.date === today) todayTasks.appendChild(li);
     else futureTasks.appendChild(li);
 
-    let liAll = document.createElement("li");
-    liAll.innerText = t.name;
-    allTasksList.appendChild(liAll);
+   let liAll = document.createElement("li");
+liAll.appendChild(card);
+allTasksList.appendChild(liAll);
   });
 }
 
