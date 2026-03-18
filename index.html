@@ -223,20 +223,35 @@ if(diff < 0) return;
     let cd = document.getElementById("cd"+i);
     if(cd) cd.innerText = hours + "h " + mins + "m left";
 
-    // Trigger notification once
-   if(now.getHours() === h && now.getMinutes() === m && !task.notified){
+  if(now.getHours() === h && now.getMinutes() === m && !task.notified){
   new Notification("Reminder: " + task.name);
 
-  // SOUND
   let audio = new Audio("sound.mp3");
   audio.play().catch(() => {});
 
   task.notified = true;
   save();
+
+  // Remove task after 10 minutes if it's today
+  if(task.date === today){
+    setTimeout(() => {
+      let index = tasks.findIndex(t =>
+        t.name === task.name &&
+        t.date === task.date &&
+        t.time === task.time
+      );
+      if(index !== -1){
+        tasks.splice(index,1);
+        save();
+        render();
+      }
+    }, 600000);
+  }
+if(name === "" || date === "" || time === "") {
+  alert("Please fill everything");
+  return;
 }
-      new Notification("Reminder: " + task.name);
-      task.notified = true;
-      save();
+    
 
       // Remove task after 10 minutes if it's today
       if(task.date === today){
