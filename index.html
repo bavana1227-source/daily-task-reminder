@@ -160,8 +160,8 @@ function editTask(i){
   taskInput.value = t.name;
   dateInput.value = t.date;
   timeInput.value = t.time;
-  category.value = t.category;
-  repeatType.value = t.repeatType;
+document.getElementById("category").value = t.category;
+document.getElementById("repeatType").value = t.repeatType;
 
   document.getElementById("daySelector").style.display =
     t.repeatType === "weekly" ? "block" : "none";
@@ -195,7 +195,7 @@ function clearForm(){
 
 // RENDER
 function render(){
-  taskList.innerHTML = "";
+
   todayTasks.innerHTML = "";
   futureTasks.innerHTML = "";
   allTasksList.innerHTML = "";
