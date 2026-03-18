@@ -3,6 +3,8 @@
 <head> 
 <title>Daily Task Reminder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Lobster Font -->
+<link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 body {
   font-family: Arial;
@@ -16,7 +18,7 @@ body {
 }
 
 /* DARK MODE */
-.dark { background: #071163ff; color: Black; }
+.dark { background: #071163ff; color: black; }
 .dark .container { background: #490051ff; }
 .dark .taskCard { background: #0d6922ff; }
 
@@ -24,21 +26,14 @@ body {
 .container {
   background: white;
   padding: 25px;
-  border-radius: 1px;
+  border-radius: 0px;
   width: 380px;
-
 }
 .calendar, .allTasks {
   background: #e9ccecff;
   padding: 20px;
-  border: 1px solid #4f46e5;
-
-}
 }
 
-
-
-}
 .category { font-size: 12px; font-weight: bold; }
 
 button {
@@ -53,6 +48,30 @@ button {
 .edit { background: orange; }
 
 input, select { width: 90%; margin: 5px 0; padding: 8px; }
+
+.task-title { font-family: 'Lobster', cursive; font-size: 1.2em; }
+
+/* Glow effect 15–5 minutes before due */
+.glow {
+  animation: glowRed 1s infinite alternate;
+  font-weight: bold;
+}
+
+@keyframes glowRed {
+  from { text-shadow: 0 0 5px #ff0000; color: #ff0000; }
+  to   { text-shadow: 0 0 20px #ff0000; color: #ff0000; }
+}
+
+/* Flash effect for last 5 minutes */
+.flash {
+  animation: flashRed 0.5s infinite alternate;
+  font-weight: bold;
+}
+
+@keyframes flashRed {
+  from { text-shadow: 0 0 20px #ff0000; color: #ff0000; }
+  to   { text-shadow: 0 0 40px #ff0000; color: #ff0000; }
+}
 </style>
 </head>
 <body>
@@ -65,7 +84,7 @@ input, select { width: 90%; margin: 5px 0; padding: 8px; }
 </div>
 
 <div class="container">
-  <h2>Task Reminder</h2>
+  <h2 style="font-family:'Lobster', cursive;">Task Reminder</h2>
 
   <input id="taskInput" placeholder="Task">
   <input type="date" id="dateInput">
@@ -98,8 +117,6 @@ input, select { width: 90%; margin: 5px 0; padding: 8px; }
   <br>
   <button onclick="addOrUpdateTask()" id="mainBtn">Add</button>
   <button onclick="toggleDark()">🌙 Dark</button>
-
- 
 </div>
 
 <div class="allTasks">
@@ -111,6 +128,9 @@ input, select { width: 90%; margin: 5px 0; padding: 8px; }
 document.getElementById("repeatType").addEventListener("change", function() {
   document.getElementById("daySelector").style.display =
     this.value === "weekly" ? "block" : "none";
+
+  document.getElementById("dateInput").style.display = 
+    (this.value === "daily" || this.value === "weekly") ? "none" : "block";
 });
 
 if(Notification.permission !== "granted") Notification.requestPermission();
@@ -123,8 +143,8 @@ function addOrUpdateTask(){
   let name = taskInput.value;
   let date = dateInput.value;
   let time = timeInput.value;
-let category = document.getElementById("category").value;
-let repeatType = document.getElementById("repeatType").value;
+  let category = document.getElementById("category").value;
+  let repeatType = document.getElementById("repeatType").value;
 
   let repeatDays = [];
   if(repeatType === "weekly"){
@@ -133,7 +153,7 @@ let repeatType = document.getElementById("repeatType").value;
     });
   }
 
-  if(!name || !date || !time){
+  if(!name || !time || (repeatType === "none" && !date)){
     alert("Fill everything");
     return;
   }
@@ -156,10 +176,10 @@ function editTask(i){
   let t = tasks[i];
 
   taskInput.value = t.name;
-  dateInput.value = t.date;
+  dateInput.value = t.date || "";
   timeInput.value = t.time;
-document.getElementById("category").value = t.category;
-document.getElementById("repeatType").value = t.repeatType;
+  document.getElementById("category").value = t.category;
+  document.getElementById("repeatType").value = t.repeatType;
 
   document.getElementById("daySelector").style.display =
     t.repeatType === "weekly" ? "block" : "none";
@@ -191,37 +211,93 @@ function clearForm(){
   document.querySelectorAll("#daySelector input").forEach(cb=>cb.checked=false);
 }
 
+// Check time difference in minutes
+function minutesUntil(taskTime){
+  let now = new Date();
+  let [h,m] = taskTime.split(":").map(Number);
+  let taskDateTime = new Date();
+  taskDateTime.setHours(h, m, 0, 0);
+  return (taskDateTime - now) / 60000;
+}
+
 // RENDER
 function render(){
-
   todayTasks.innerHTML = "";
   futureTasks.innerHTML = "";
   allTasksList.innerHTML = "";
 
-  let today = new Date().toISOString().split("T")[0];
+  let now = new Date();
+  let today = now.toISOString().split("T")[0];
+  let todayDay = now.getDay();
 
   tasks.forEach((t,i)=>{
     let card = document.createElement("div");
     card.className = "taskCard";
     card.innerHTML = `
-      <b>${t.name}</b> (${t.time})
+      <div class="task-title">${t.name}</div>
       <div class="category">
         ${t.category} ${t.repeatType !== "none" ? "• 🔁 " + t.repeatType : ""}
       </div>
       <button class="edit" onclick="editTask(${i})">Edit</button>
       <button class="delete" onclick="removeTask(${i})">Delete</button>
     `;
- 
 
+    // Determine style based on due time
     let li = document.createElement("li");
     li.innerText = t.time + " - " + t.name;
+    let mins = minutesUntil(t.time);
+    if(mins <= 5 && mins >= 0){
+      li.classList.add("flash"); // last 5 minutes
+    } else if(mins <= 15 && mins >= 0){
+      li.classList.add("glow");  // 15–5 minutes
+    }
 
-    if(t.date === today) todayTasks.appendChild(li);
-    else futureTasks.appendChild(li);
+    // Today's tasks
+    let isToday = t.repeatType === "daily" || 
+                  (t.repeatType === "weekly" && t.repeatDays.includes(todayDay)) ||
+                  t.date === today;
+    if(isToday){
+      todayTasks.appendChild(li);
+    }
 
-   let liAll = document.createElement("li");
-liAll.appendChild(card);
-allTasksList.appendChild(liAll);
+    // Future tasks
+    if(t.repeatType === "weekly"){
+      let addedDates = new Set();
+      for(let offset=1; offset<=7; offset++){
+        let futureDay = (todayDay + offset) % 7;
+        if(t.repeatDays.includes(futureDay)){
+          let futureDate = new Date();
+          futureDate.setDate(futureDate.getDate() + offset);
+          let dateStr = futureDate.toISOString().split("T")[0];
+          if(!addedDates.has(dateStr)){
+            addedDates.add(dateStr);
+            let liFuture = document.createElement("li");
+            liFuture.innerText = dateStr + " - " + t.time + " - " + t.name;
+            let futureMins = minutesUntil(t.time);
+            if(futureMins <= 5 && futureMins >= 0){
+              liFuture.classList.add("flash");
+            } else if(futureMins <= 15 && futureMins >= 0){
+              liFuture.classList.add("glow");
+            }
+            futureTasks.appendChild(liFuture);
+          }
+        }
+      }
+    } else if(t.repeatType === "none" && t.date > today){
+      let liFuture = document.createElement("li");
+      liFuture.innerText = t.date + " - " + t.time + " - " + t.name;
+      let futureMins = minutesUntil(t.time);
+      if(futureMins <= 5 && futureMins >= 0){
+        liFuture.classList.add("flash");
+      } else if(futureMins <= 15 && futureMins >= 0){
+        liFuture.classList.add("glow");
+      }
+      futureTasks.appendChild(liFuture);
+    }
+
+    let liAll = document.createElement("li");
+    liAll.appendChild(card);
+    allTasksList.appendChild(liAll);
   });
 }
 
@@ -231,7 +307,7 @@ function update(){
   let today = now.toISOString().split("T")[0];
   let todayDay = now.getDay();
 
-  tasks.forEach(task=>{
+  tasks.forEach((task, i)=>{
     let [h,m] = task.time.split(":").map(Number);
 
     let shouldRun = false;
@@ -244,12 +320,19 @@ function update(){
       new Notification("Reminder: " + task.name);
       task.notified = true;
       save();
+
+      setTimeout(()=>{
+        removeTask(i);
+      }, 5 * 60 * 1000);
     }
 
     if(task.repeatType !== "none" && now.getHours() === 0 && now.getMinutes() === 0){
       task.notified = false;
+      save();
     }
   });
+
+  render(); // re-render to update glow/flash
 }
 
 setInterval(update, 60000);
