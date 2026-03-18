@@ -125,8 +125,8 @@ function addOrUpdateTask(){
   let name = taskInput.value;
   let date = dateInput.value;
   let time = timeInput.value;
-  let category = category.value;
-  let repeatType = repeatType.value;
+let category = document.getElementById("category").value;
+let repeatType = document.getElementById("repeatType").value;
 
   let repeatDays = [];
   if(repeatType === "weekly"){
