@@ -10,31 +10,15 @@ body {
   display: flex;
   gap: 40px;
   padding: 40px;
-  transition: 0.3s;
 }
 @media (max-width: 768px) {
-  body {
-    flex-direction: column;
-    padding: 15px;
-    gap: 20px;
-  }
-
-  .container,
-  .calendar,
-  .allTasks {
-    width: 100%;
-  }
+  body { flex-direction: column; padding: 15px; }
 }
 
 /* DARK MODE */
-.dark {
-  background: #1f2937;
-  color: white;
-}
+.dark { background: #1f2937; color: white; }
 .dark .container { background: #374151; }
 .dark .taskCard { background: #4b5563; }
-.dark .allTasks { background: #195f33ff; }
-.dark .calendar { background: #4b5563; color: white; }
 
 /* PANELS */
 .container {
@@ -42,59 +26,39 @@ body {
   padding: 25px;
   border-radius: 15px;
   width: 380px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
-.allTasks {
-  background: #c4e7d1ff;
+.calendar, .allTasks {
+  background: white;
   padding: 20px;
   border-radius: 14px;
   width: 250px;
-  height: fit-content;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-}
-.calendar {
-  background: #fff;
-  padding: 20px;
-  border-radius: 14px;
-  width: 250px;
-  height: fit-content;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-/* TASK CARD */
+/* TASK */
 .taskCard {
   background: #f9fafb;
-  padding: 14px;
-  border-radius: 10px;
+  padding: 12px;
   margin-bottom: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border-radius: 10px;
 }
-.category {
-  font-size: 12px;
-  font-weight: bold;
-}
-.school { color: #2563eb; }
-.work { color: #16a34a; }
-.personal { color: #db2777; }
-.health { color: #ea580c; }
-.countdown { font-size: 13px; color: #4f46e5; }
+.category { font-size: 12px; font-weight: bold; }
+
 button {
-  padding: 8px 12px;
+  padding: 8px;
   border: none;
   border-radius: 6px;
   background: #4f46e5;
   color: white;
   cursor: pointer;
-  margin-right: 5px;
 }
-.delete { background: #ef4444; }
+.delete { background: red; }
+.edit { background: orange; }
 
-input, select { padding: 8px; margin: 5px 0; width: 90%; border-radius: 6px; border: 1px solid #ccc; }
+input, select { width: 90%; margin: 5px 0; padding: 8px; }
 </style>
 </head>
 <body>
 
-<!-- Calendar Panel: Today / Future -->
 <div class="calendar">
   <h3>Today's Tasks</h3>
   <ul id="todayTasks"></ul>
@@ -102,187 +66,202 @@ input, select { padding: 8px; margin: 5px 0; width: 90%; border-radius: 6px; bor
   <ul id="futureTasks"></ul>
 </div>
 
-<!-- Main Task Input Panel -->
 <div class="container">
   <h2>Task Reminder</h2>
+
   <input id="taskInput" placeholder="Task">
   <input type="date" id="dateInput">
   <input type="time" id="timeInput">
+
   <select id="category">
     <option>School</option>
     <option>Work</option>
     <option>Personal</option>
     <option>Health</option>
   </select>
-  <button onclick="addTask()">Add</button>
-  <button onclick="toggleDark()">🌙 Dark Mode</button>
+
+  <label>Repeat:</label>
+  <select id="repeatType">
+    <option value="none">No Repeat</option>
+    <option value="daily">Daily</option>
+    <option value="weekly">Specific Days</option>
+  </select>
+
+  <div id="daySelector" style="display:none;">
+    <label><input type="checkbox" value="1"> Mon</label>
+    <label><input type="checkbox" value="2"> Tue</label>
+    <label><input type="checkbox" value="3"> Wed</label>
+    <label><input type="checkbox" value="4"> Thu</label>
+    <label><input type="checkbox" value="5"> Fri</label>
+    <label><input type="checkbox" value="6"> Sat</label>
+    <label><input type="checkbox" value="0"> Sun</label>
+  </div>
+
+  <br>
+  <button onclick="addOrUpdateTask()" id="mainBtn">Add</button>
+  <button onclick="toggleDark()">🌙 Dark</button>
+
   <div id="taskList"></div>
 </div>
 
-<!-- All Tasks Panel -->
 <div class="allTasks">
   <h3>All Tasks</h3>
   <ul id="allTasksList"></ul>
 </div>
 
 <script>
-  document.addEventListener("click", () => {
-  let audio = new Audio("sound.mp3");
-  audio.play().then(() => {
-    audio.pause();
-    audio.currentTime = 0;
-  }).catch(()=>{});
-}, { once: true });
+document.getElementById("repeatType").addEventListener("change", function() {
+  document.getElementById("daySelector").style.display =
+    this.value === "weekly" ? "block" : "none";
+});
+
 if(Notification.permission !== "granted") Notification.requestPermission();
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+let editIndex = null;
 
-// --- Render function ---
-function render() {
-  let list = document.getElementById("taskList");
-  let todayList = document.getElementById("todayTasks");
-  let futureList = document.getElementById("futureTasks");
-  let allList = document.getElementById("allTasksList");
+// ADD OR UPDATE
+function addOrUpdateTask(){
+  let name = taskInput.value;
+  let date = dateInput.value;
+  let time = timeInput.value;
+  let category = category.value;
+  let repeatType = repeatType.value;
 
-  list.innerHTML = "";
-  todayList.innerHTML = "";
-  futureList.innerHTML = "";
-  allList.innerHTML = "";
+  let repeatDays = [];
+  if(repeatType === "weekly"){
+    document.querySelectorAll("#daySelector input:checked").forEach(cb=>{
+      repeatDays.push(Number(cb.value));
+    });
+  }
 
-  let today = new Date().toISOString().split("T")[0];
+  if(!name || !date || !time){
+    alert("Fill everything");
+    return;
+  }
 
-  tasks.forEach((task, i) => {
-    // Task Card
-    let card = document.createElement("div");
-    card.className = "taskCard";
-    card.innerHTML = `
-      <b>${task.name}</b> (${task.time})
-      <div class="category ${task.category.toLowerCase()}">${task.category}</div>
-      <div class="countdown" id="cd${i}"></div>
-      <button onclick="shareTask('${task.name}','${task.time}')">Share</button>
-      <button class="delete" onclick="removeTask(${i})">Delete</button>
-    `;
-    list.appendChild(card);
+  let taskObj = {name, date, time, category, repeatType, repeatDays, notified:false};
 
-    // All Tasks
-    let liAll = document.createElement("li");
-    liAll.innerText = task.name + " (" + task.time + ")";
-    allList.appendChild(liAll);
+  if(editIndex === null){
+    tasks.push(taskObj);
+  } else {
+    tasks[editIndex] = taskObj;
+    editIndex = null;
+    mainBtn.innerText = "Add";
+  }
 
-    // Today / Future
-    let liDate = document.createElement("li");
-    liDate.innerText = task.time + " - " + task.name;
-    if(task.date === today) todayList.appendChild(liDate);
-    else futureList.appendChild(liDate);
+  save(); render(); clearForm();
+}
+
+// EDIT
+function editTask(i){
+  let t = tasks[i];
+
+  taskInput.value = t.name;
+  dateInput.value = t.date;
+  timeInput.value = t.time;
+  category.value = t.category;
+  repeatType.value = t.repeatType;
+
+  document.getElementById("daySelector").style.display =
+    t.repeatType === "weekly" ? "block" : "none";
+
+  document.querySelectorAll("#daySelector input").forEach(cb=>{
+    cb.checked = t.repeatDays.includes(Number(cb.value));
   });
+
+  editIndex = i;
+  mainBtn.innerText = "Update";
 }
 
-// --- Add Task ---
-function addTask() {
-  let name = document.getElementById("taskInput").value;
-  let date = document.getElementById("dateInput").value;
-  let time = document.getElementById("timeInput").value;
-  let category = document.getElementById("category").value;
-  if(name === "" || date === "") return;
-
-  tasks.push({name, date, time, category, notified:false});
-  save(); render();
-
-  document.getElementById("taskInput").value = "";
-  document.getElementById("dateInput").value = "";
-  document.getElementById("timeInput").value = "";
-}
-
-// --- Remove Task ---
-function removeTask(i) {
+// REMOVE
+function removeTask(i){
   tasks.splice(i,1);
   save(); render();
 }
 
-// --- Save ---
-function save() {
+// SAVE
+function save(){
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-// --- Update countdown & notifications ---
-function update() {
+// CLEAR FORM
+function clearForm(){
+  taskInput.value = "";
+  dateInput.value = "";
+  timeInput.value = "";
+  document.querySelectorAll("#daySelector input").forEach(cb=>cb.checked=false);
+}
+
+// RENDER
+function render(){
+  taskList.innerHTML = "";
+  todayTasks.innerHTML = "";
+  futureTasks.innerHTML = "";
+  allTasksList.innerHTML = "";
+
+  let today = new Date().toISOString().split("T")[0];
+
+  tasks.forEach((t,i)=>{
+    let card = document.createElement("div");
+    card.className = "taskCard";
+    card.innerHTML = `
+      <b>${t.name}</b> (${t.time})
+      <div class="category">
+        ${t.category} ${t.repeatType !== "none" ? "• 🔁 " + t.repeatType : ""}
+      </div>
+      <button class="edit" onclick="editTask(${i})">Edit</button>
+      <button class="delete" onclick="removeTask(${i})">Delete</button>
+    `;
+    taskList.appendChild(card);
+
+    let li = document.createElement("li");
+    li.innerText = t.time + " - " + t.name;
+
+    if(t.date === today) todayTasks.appendChild(li);
+    else futureTasks.appendChild(li);
+
+    let liAll = document.createElement("li");
+    liAll.innerText = t.name;
+    allTasksList.appendChild(liAll);
+  });
+}
+
+// UPDATE (notifications)
+function update(){
   let now = new Date();
   let today = now.toISOString().split("T")[0];
+  let todayDay = now.getDay();
 
-  tasks.forEach((task, i) => {
-   if(!task.time) return;
+  tasks.forEach(task=>{
     let [h,m] = task.time.split(":").map(Number);
-    let taskDateTime = new Date(task.date + "T" + task.time);
-let diff = Math.floor((taskDateTime - now) / 60000);
 
-if(diff < 0) return;
+    let shouldRun = false;
 
-    let hours = Math.floor(diff/60);
-    let mins = diff % 60;
+    if(task.repeatType === "daily") shouldRun = true;
+    else if(task.repeatType === "weekly") shouldRun = task.repeatDays.includes(todayDay);
+    else shouldRun = task.date === today;
 
-    let cd = document.getElementById("cd"+i);
-    if(cd) cd.innerText = hours + "h " + mins + "m left";
+    if(shouldRun && now.getHours() === h && now.getMinutes() === m && !task.notified){
+      new Notification("Reminder: " + task.name);
+      task.notified = true;
+      save();
+    }
 
-  if(now.getHours() === h && now.getMinutes() === m && !task.notified){
-  new Notification("Reminder: " + task.name);
-
-  let audio = new Audio("sound.mp3");
-  audio.play().catch(() => {});
-
-  task.notified = true;
-  save();
-
-  // Remove task after 10 minutes if it's today
-  if(task.date === today){
-    setTimeout(() => {
-      let index = tasks.findIndex(t =>
-        t.name === task.name &&
-        t.date === task.date &&
-        t.time === task.time
-      );
-      if(index !== -1){
-        tasks.splice(index,1);
-        save();
-        render();
-      }
-    }, 600000);
-  }
-if(name === "" || date === "" || time === "") {
-  alert("Please fill everything");
-  return;
-}
-    
-
-      // Remove task after 10 minutes if it's today
-      if(task.date === today){
-        setTimeout(() => {
-          let index = tasks.findIndex(t => t.name === task.name && t.date === task.date && t.time === task.time);
-          if(index !== -1){ tasks.splice(index,1); save(); render(); }
-        }, 600000); // 10 minutes
-      }
+    if(task.repeatType !== "none" && now.getHours() === 0 && now.getMinutes() === 0){
+      task.notified = false;
     }
   });
 }
 
-setInterval(update, 60000); // every minute
+setInterval(update, 60000);
 
-// --- Dark mode toggle ---
-function toggleDark() {
+function toggleDark(){
   document.body.classList.toggle("dark");
-}
-
-// --- Share task ---
-function shareTask(name, time){
-  const text = `Reminder: ${name} at ${time}`;
-  if(navigator.share){
-    navigator.share({ title:"Task Reminder", text });
-  } else {
-    navigator.clipboard.writeText(text);
-    alert("Task copied! Send it to a friend.");
-  }
 }
 
 render();
 </script>
+
 </body>
 </html>
